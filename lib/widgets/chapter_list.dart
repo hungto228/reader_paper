@@ -53,43 +53,13 @@ class _ChapterListState extends State<ChapterList> {
           const SizedBox(width: 16),
         ],
       ),
-      body: Stack(
-        children: [
-          ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: controller.book.value.chapters.length,
-            itemBuilder: (context, index) {
-              final chapter = controller.book.value.chapters[index];
-              return _buildChapterCard(context, chapter);
-            },
-          ),
-          if (_isAnimating && _coinBalancePosition != null && _unlockButtonPosition != null)
-            Positioned.fill(
-              child: CoinAnimation(
-                coinCount: 5,
-                startPosition: _coinBalancePosition!,
-                endPosition: _unlockButtonPosition!,
-                onComplete: () {
-                  setState(() {
-                    _isAnimating = false;
-                    if (_pendingUnlockChapter != null) {
-                      if (controller.canUnlockChapter(_pendingUnlockChapter!.id)) {
-                        controller.unlockChapter(_pendingUnlockChapter!.id);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Not enough coins!'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                      _pendingUnlockChapter = null;
-                    }
-                  });
-                },
-              ),
-            ),
-        ],
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: controller.book.value.chapters.length,
+        itemBuilder: (context, index) {
+          final chapter = controller.book.value.chapters[index];
+          return _buildChapterCard(context, chapter);
+        },
       ),
     ));
   }
@@ -188,6 +158,10 @@ class _ChapterListState extends State<ChapterList> {
           _isAnimating = true;
           _pendingUnlockChapter = chapter;
         });
+        
+        // Show animation using Overlay
+        _showCoinAnimation();
+        
         print('Animation started with positions: $_coinBalancePosition -> $_unlockButtonPosition');
       } else if (retry > 0) {
         print('Failed to get render boxes, retrying...');
@@ -198,6 +172,42 @@ class _ChapterListState extends State<ChapterList> {
         print('Failed to get render boxes after retries');
       }
     });
+  }
+
+  void _showCoinAnimation() {
+    if (_coinBalancePosition != null && _unlockButtonPosition != null) {
+      final overlay = Overlay.of(context);
+      late OverlayEntry overlayEntry;
+      
+      overlayEntry = OverlayEntry(
+        builder: (context) => CoinAnimation(
+          coinCount: 5,
+          startPosition: _coinBalancePosition!,
+          endPosition: _unlockButtonPosition!,
+          onComplete: () {
+            overlayEntry.remove();
+            setState(() {
+              _isAnimating = false;
+              if (_pendingUnlockChapter != null) {
+                if (controller.canUnlockChapter(_pendingUnlockChapter!.id)) {
+                  controller.unlockChapter(_pendingUnlockChapter!.id);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Not enough coins!'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+                _pendingUnlockChapter = null;
+              }
+            });
+          },
+        ),
+      );
+      
+      overlay.insert(overlayEntry);
+    }
   }
   void _openChapter(Chapter chapter) {
     Get.to(() => ReadingScreen(chapter: chapter));

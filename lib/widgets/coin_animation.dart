@@ -145,7 +145,7 @@ class _CoinAnimationState extends State<CoinAnimation>
     final dy = start.dy + (end.dy - start.dy) * progress - arcHeight * math.sin(progress * math.pi);
     
     // Add a small offset to adjust the final position
-    final adjustedEnd = Offset(end.dx, end.dy - 10); // Move up by 10 pixels
+    final adjustedEnd = Offset(end.dx, end.dy - 20); // Move up by 20 pixels
     
     final finalDx = start.dx + (adjustedEnd.dx - start.dx) * progress;
     final finalDy = start.dy + (adjustedEnd.dy - start.dy) * progress - arcHeight * math.sin(progress * math.pi);
